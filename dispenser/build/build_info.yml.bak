@@ -1,0 +1,5 @@
+west:
+  command: /home/samue/csse4011/.venv/bin/west build -b xiao_ble/nrf52840/sense -d
+    dispenser/build dispenser
+  topdir: /home/samue/csse4011
+  version: 1.5.0
