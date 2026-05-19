@@ -11,6 +11,9 @@
 #include <zephyr/logging/log.h>
 #include "main.h"
 #include "mqtt_handler.h"
+#include <zephyr/usb/usb_device.h>
+#include <zephyr/drivers/uart.h>
+#include "wifi.h"
 
 LOG_MODULE_REGISTER(dispenser, LOG_LEVEL_INF);
 
@@ -286,12 +289,49 @@ SHELL_CMD_REGISTER(smf, &smf_cmds, "Dispenser state machine", NULL);
 /* Initialisation                                                             */
 /* ========================================================================== */
 
+// int main(void)
+// {
+//     int ret;
+
+//     dispenser_ctx.pill_count = 10;
+//     dispenser_ctx.correct_pin = "1234";
+
+//     smf_set_initial(SMF_CTX(&dispenser_ctx), &states[STATE_IDLE]);
+
+//     while (1) {
+//         ret = smf_run_state(SMF_CTX(&dispenser_ctx));
+//         if (ret != 0) {
+//             LOG_ERR("State machine terminated: %d", ret);
+//             break;
+//         }
+//         k_msleep(TICK_MS);
+//     }
+
+//     return 0;
+// }
+
+
 int main(void)
 {
     int ret;
 
+    ret = usb_enable(NULL);
+    if (ret != 0) {
+        return ret;
+    }
+
+    /* Wait for DTR - host opens the port */
+    const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+    uint32_t dtr = 0;
+    while (!dtr) {
+        uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr);
+        k_sleep(K_MSEC(100));
+    }
+
     dispenser_ctx.pill_count = 10;
     dispenser_ctx.correct_pin = "1234";
+
+    connect_wifi();
 
     smf_set_initial(SMF_CTX(&dispenser_ctx), &states[STATE_IDLE]);
 
