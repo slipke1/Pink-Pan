@@ -28,6 +28,7 @@ struct dispenser_ctx {
     int pill_count;          // current pill inventory
     bool servo_open;         // current servo state, true if open
     int event_id;          // Incrementing event ID for outgoing events, used by base node for logging and tracking
+    int servo_number_opens // Keeping track of how many times the servo has opened
 };
 
 // Global

@@ -14,6 +14,8 @@
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/drivers/uart.h>
 #include "wifi.h"
+#include "ir_beam.h"
+#include "servo.h"
 
 LOG_MODULE_REGISTER(dispenser, LOG_LEVEL_INF);
 
@@ -152,8 +154,9 @@ static void unlocked_entry(void *obj)
     struct dispenser_ctx *ctx = obj;
     ctx->servo_open = true;
     LOG_INF("UNLOCKED");
-    // Placeholder for servo to open flap
-    // servo_open(); 
+    // Opening servo and keeping track of how many times it's opened for maintenance purposes
+    servo_open(); 
+    ctx->servo_number_opens++;
 }
 
 // Transition straight to DISPENSING
@@ -172,7 +175,7 @@ static void locked_entry(void *obj)
 
     if (ctx->servo_open) {
         // Placeholder for servo to close flap
-        // servo_close(); 
+        servo_close(); 
         ctx->servo_open = false;
     }
     LOG_INF("LOCKED");
@@ -199,6 +202,7 @@ static void dispensing_entry(void *obj)
     struct dispenser_ctx *ctx = obj;
 
     ctx->pill_count--;
+    // PLACEHOLDER FOR PILL COUNT + AND -
     LOG_INF("DISPENSING - pills remaining: %d", ctx->pill_count);
 
     // Send dispense success event to base node for logging and inventory tracking
@@ -289,30 +293,13 @@ SHELL_CMD_REGISTER(smf, &smf_cmds, "Dispenser state machine", NULL);
 /* Initialisation                                                             */
 /* ========================================================================== */
 
-// int main(void)
-// {
-//     int ret;
-
-//     dispenser_ctx.pill_count = 10;
-//     dispenser_ctx.correct_pin = "1234";
-
-//     smf_set_initial(SMF_CTX(&dispenser_ctx), &states[STATE_IDLE]);
-
-//     while (1) {
-//         ret = smf_run_state(SMF_CTX(&dispenser_ctx));
-//         if (ret != 0) {
-//             LOG_ERR("State machine terminated: %d", ret);
-//             break;
-//         }
-//         k_msleep(TICK_MS);
-//     }
-
-//     return 0;
-// }
-
 
 int main(void)
 {
+    // Initialising hardware components
+    servo_init();
+    ir_beam_init();
+
     int ret;
 
     ret = usb_enable(NULL);
@@ -328,10 +315,12 @@ int main(void)
         k_sleep(K_MSEC(100));
     }
 
-    dispenser_ctx.pill_count = 10;
+    // Initialising state machine context
+    dispenser_ctx.pill_count = ir_beam_get_count();
+    dispenser_ctx.servo_number_opens = 0;
     dispenser_ctx.correct_pin = "1234";
 
-    connect_wifi();
+    //connect_wifi();
 
     smf_set_initial(SMF_CTX(&dispenser_ctx), &states[STATE_IDLE]);
 
