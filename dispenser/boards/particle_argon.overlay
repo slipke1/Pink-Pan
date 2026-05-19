@@ -11,6 +11,19 @@
         zephyr,shell-uart = &cdc_acm_uart0;
         zephyr,uart-mcumgr = &cdc_acm_uart0;
     };
+
+    servo: servo {
+        compatible = "pwm-servo";
+        pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+    };
+
+    ir_beam: ir_beam {
+        compatible = "gpio-keys";
+        ir_sensor: ir_sensor {
+            gpios = <&gpio1 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+            label = "IR Break Beam";
+        };
+    };
 };
 
 &zephyr_udc0 {
